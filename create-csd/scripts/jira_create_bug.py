@@ -17,7 +17,6 @@ CREATE_ISSUE_PATH = "/rest/api/2/issue"
 CREATE_ISSUE_URL = "https://jira.agoralab.co/rest/api/2/issue"
 BROWSE_ISSUE_URL_TEMPLATE = "https://jira.agoralab.co/browse/{issue_key}"
 TRANSITIONS_PATH_TEMPLATE = "/rest/api/2/issue/{issue_key}/transitions"
-SUMMARY_PREFIX = "[TEST][CSD] "
 DEFAULT_ASSIGNEE = "xieziling@agora.io"
 START_PROGRESS_TRANSITION_NAME = "Start Progress"
 START_PROGRESS_CREATE_QUALITY_ID = "12611"
@@ -34,23 +33,48 @@ def load_jira_request_module():
     return module
 
 
-def normalize_summary(summary: str) -> str:
-    if summary.startswith(SUMMARY_PREFIX):
-        return summary
-    return f"{SUMMARY_PREFIX}{summary}"
+def normalize_summary(summary: str, customer: str | None = None) -> str:
+    cleaned_summary = summary.strip()
+    if not cleaned_summary:
+        raise ValueError("Issue summary text cannot be empty.")
+
+    cleaned_customer = (customer or "").strip()
+    if not cleaned_customer:
+        return cleaned_summary
+
+    customer_prefix = f"[{cleaned_customer}] "
+    if cleaned_summary.startswith(customer_prefix):
+        return cleaned_summary
+    return f"{customer_prefix}{cleaned_summary}"
 
 
-def build_default_description(now: datetime) -> str:
+def build_default_description(
+    now: datetime,
+    summary: str,
+    vid: str,
+    customer: str | None = None,
+    cid: str | None = None,
+) -> str:
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-    return (
-        "Automated test issue created by jira_create_bug.py.\n"
-        f"Created at: {timestamp}\n\n"
-        "This is a test issue for validating the CSD Bug creation path."
-    )
+    lines = []
+    if customer:
+        lines.append(f"Customer: {customer}")
+    if cid:
+        lines.append(f"CID: {cid}")
+    lines.append(f"VID: {vid}")
+    lines.append("")
+    lines.append("Problem Description:")
+    lines.append(summary.strip())
+    lines.append("")
+    lines.append(f"Created at: {timestamp}")
+    return "\n".join(lines)
 
 
-def build_test_vid(now: datetime) -> str:
-    return f"TEST-CSD-{now:%Y%m%d-%H%M%S}"
+def normalize_vid(vid: str | None) -> str:
+    cleaned_vid = (vid or "").strip()
+    if not cleaned_vid:
+        raise ValueError("--vid is required and must be the real customer VID.")
+    return cleaned_vid
 
 
 def build_assignee_payload(assignee: str = DEFAULT_ASSIGNEE):
@@ -92,18 +116,30 @@ def find_transition_by_name(
 def build_issue_payload(
     summary: str,
     description: str | None,
+    vid: str | None = None,
+    customer: str | None = None,
+    cid: str | None = None,
     env_path: Path = DEFAULT_ENV_PATH,
     now: datetime | None = None,
 ):
     jira_request = load_jira_request_module()
     reporter_name, _ = jira_request.load_basic_auth_credentials(env_path)
     now = now or datetime.now()
+    normalized_summary = normalize_summary(summary, customer=customer)
+    effective_vid = normalize_vid(vid)
     return {
         "fields": {
             "project": {"key": "CSD"},
             "issuetype": {"id": "10004"},
-            "summary": normalize_summary(summary),
-            "description": description or build_default_description(now),
+            "summary": normalized_summary,
+            "description": description
+            or build_default_description(
+                now,
+                summary=summary,
+                vid=effective_vid,
+                customer=customer,
+                cid=cid,
+            ),
             "components": [{"id": "25502"}],
             "versions": [{"id": "43913"}],
             "priority": {"id": "2"},
@@ -115,7 +151,7 @@ def build_issue_payload(
             ],
             "customfield_11621": {"id": "11265"},
             "customfield_12110": {"id": "11261"},
-            "customfield_12600": build_test_vid(now),
+            "customfield_12600": effective_vid,
             "customfield_13006": {
                 "id": "11810",
                 "child": {"id": "11818"},
@@ -147,8 +183,20 @@ def main(
     )
     parser.add_argument("--summary", required=True, help="Issue summary text.")
     parser.add_argument(
+        "--customer",
+        help="Optional customer name used to normalize the summary as [Customer] issue.",
+    )
+    parser.add_argument(
+        "--cid",
+        help="Optional customer CID for the default description template.",
+    )
+    parser.add_argument(
+        "--vid",
+        help="Customer VID. Required for all customer-ticket payloads, including dry-run preview.",
+    )
+    parser.add_argument(
         "--description",
-        help="Optional issue description. If omitted, a test description is generated.",
+        help="Optional issue description. If omitted, a customer-oriented template is generated.",
     )
     parser.add_argument(
         "--create",
@@ -160,6 +208,9 @@ def main(
     payload = build_issue_payload(
         summary=args.summary,
         description=args.description,
+        vid=args.vid,
+        customer=args.customer,
+        cid=args.cid,
         env_path=env_path,
         now=now_provider(),
     )

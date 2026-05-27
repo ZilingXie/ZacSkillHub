@@ -31,7 +31,7 @@ class JiraCreateBugTests(unittest.TestCase):
         self.addCleanup(tmpdir.cleanup)
         return env_path
 
-    def test_build_issue_payload_applies_template_prefix_and_generated_vid(self):
+    def test_build_issue_payload_formats_summary_and_customer_fields(self):
         env_path = self.write_env(
             "\n".join(
                 [
@@ -43,8 +43,11 @@ class JiraCreateBugTests(unittest.TestCase):
         now = datetime(2026, 4, 11, 18, 45, 7)
 
         payload = self.module.build_issue_payload(
-            summary="create path smoke test",
+            summary="Slow first remote video rendering",
             description=None,
+            customer="Knowmerece",
+            cid="1436734",
+            vid="1649426",
             env_path=env_path,
             now=now,
         )
@@ -52,7 +55,7 @@ class JiraCreateBugTests(unittest.TestCase):
         fields = payload["fields"]
         self.assertEqual(
             fields["summary"],
-            "[TEST][CSD] create path smoke test",
+            "[Knowmerece] Slow first remote video rendering",
         )
         self.assertEqual(fields["reporter"], {"name": "user@example.com"})
         self.assertEqual(fields["project"], {"key": "CSD"})
@@ -63,8 +66,35 @@ class JiraCreateBugTests(unittest.TestCase):
         self.assertEqual(fields["customfield_11621"], {"id": "11265"})
         self.assertEqual(fields["customfield_12110"], {"id": "11261"})
         self.assertEqual(fields["customfield_18003"], {"id": "16209"})
-        self.assertEqual(fields["customfield_12600"], "TEST-CSD-20260411-184507")
-        self.assertIn("test issue", fields["description"].lower())
+        self.assertEqual(fields["customfield_12600"], "1649426")
+        self.assertIn("Customer: Knowmerece", fields["description"])
+        self.assertIn("CID: 1436734", fields["description"])
+        self.assertIn("VID: 1649426", fields["description"])
+        self.assertIn("Slow first remote video rendering", fields["description"])
+
+    def test_build_issue_payload_requires_vid(self):
+        env_path = self.write_env(
+            "\n".join(
+                [
+                    "jira_user=user@example.com",
+                    "jira_pwd=pass-123",
+                ]
+            )
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "--vid is required and must be the real customer VID",
+        ):
+            self.module.build_issue_payload(
+                summary="Slow first remote video rendering",
+                description=None,
+                customer="Knowmerece",
+                cid="1436734",
+                vid="",
+                env_path=env_path,
+                now=datetime(2026, 4, 11, 18, 45, 7),
+            )
 
     def test_main_dry_run_prints_url_payload_and_create_hint(self):
         env_path = self.write_env(
@@ -78,7 +108,16 @@ class JiraCreateBugTests(unittest.TestCase):
         stdout = io.StringIO()
 
         payload = self.module.main(
-            argv=["--summary", "create path smoke test"],
+            argv=[
+                "--summary",
+                "Slow first remote video rendering",
+                "--customer",
+                "Knowmerece",
+                "--cid",
+                "1436734",
+                "--vid",
+                "1649426",
+            ],
             env_path=env_path,
             now_provider=lambda: datetime(2026, 4, 11, 18, 45, 7),
             request_func=lambda *args, **kwargs: self.fail(
@@ -89,17 +128,57 @@ class JiraCreateBugTests(unittest.TestCase):
 
         self.assertEqual(
             payload["fields"]["summary"],
-            "[TEST][CSD] create path smoke test",
+            "[Knowmerece] Slow first remote video rendering",
         )
         self.assertIn(
             "POST https://jira.agoralab.co/rest/api/2/issue",
             stdout.getvalue(),
         )
-        self.assertIn('"customfield_12600": "TEST-CSD-20260411-184507"', stdout.getvalue())
+        self.assertIn('"customfield_12600": "1649426"', stdout.getvalue())
         self.assertIn("assign the new issue to xieziling@agora.io", stdout.getvalue())
         self.assertIn("Start Progress", stdout.getvalue())
         self.assertIn("https://jira.agoralab.co/browse/<new-key>", stdout.getvalue())
         self.assertIn("--create", stdout.getvalue())
+
+    def test_main_dry_run_requires_vid(self):
+        env_path = self.write_env(
+            "\n".join(
+                [
+                    "jira_user=user@example.com",
+                    "jira_pwd=pass-123",
+                ]
+            )
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "--vid is required and must be the real customer VID",
+        ):
+            self.module.main(
+                argv=["--summary", "Slow first remote video rendering"],
+                env_path=env_path,
+                now_provider=lambda: datetime(2026, 4, 11, 18, 45, 7),
+            )
+
+    def test_main_create_requires_vid(self):
+        env_path = self.write_env(
+            "\n".join(
+                [
+                    "jira_user=user@example.com",
+                    "jira_pwd=pass-123",
+                ]
+            )
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "--vid is required and must be the real customer VID",
+        ):
+            self.module.main(
+                argv=["--summary", "Slow first remote video rendering", "--create"],
+                env_path=env_path,
+                now_provider=lambda: datetime(2026, 4, 11, 18, 45, 7),
+            )
 
     def test_find_transition_by_name_returns_match(self):
         transition = self.module.find_transition_by_name(
@@ -181,7 +260,15 @@ class JiraCreateBugTests(unittest.TestCase):
             )
 
         result = self.module.main(
-            argv=["--summary", "create path smoke test", "--create"],
+            argv=[
+                "--summary",
+                "Slow first remote video rendering",
+                "--customer",
+                "Knowmerece",
+                "--vid",
+                "1649426",
+                "--create",
+            ],
             env_path=env_path,
             now_provider=lambda: datetime(2026, 4, 11, 18, 45, 7),
             request_func=fake_request,
@@ -193,7 +280,7 @@ class JiraCreateBugTests(unittest.TestCase):
         self.assertEqual(captured[0]["path_or_url"], "/rest/api/2/issue")
         self.assertEqual(
             captured[0]["kwargs"]["json_body"]["fields"]["summary"],
-            "[TEST][CSD] create path smoke test",
+            "[Knowmerece] Slow first remote video rendering",
         )
         self.assertEqual(captured[1]["method"], "PUT")
         self.assertEqual(
@@ -239,6 +326,9 @@ class JiraCreateBugTests(unittest.TestCase):
         self.assertIn('"status": "InProgress"', stdout.getvalue())
         self.assertIn('"url": "https://jira.agoralab.co/browse/CSD-10001"', stdout.getvalue())
         self.assertNotIn("ignored", stdout.getvalue())
+
+    def test_source_has_no_test_vid_fallback(self):
+        self.assertNotIn("TEST-CSD", MODULE_PATH.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

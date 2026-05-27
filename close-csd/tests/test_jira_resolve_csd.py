@@ -219,7 +219,17 @@ class JiraResolveCsdTests(unittest.TestCase):
         fake_request = FakeJiraAPI()
 
         result = self.module.main(
-            argv=["CSD-10001", "CSD-10002", "CSD-10003", "CSD-10004", "--resolve"],
+            argv=[
+                "CSD-10001",
+                "CSD-10002",
+                "CSD-10003",
+                "CSD-10004",
+                "--root-cause",
+                "Remote video decoded early but setupRemoteVideoEx was delayed.",
+                "--solution",
+                "Move setupRemoteVideoEx earlier.",
+                "--resolve",
+            ],
             request_func=fake_request,
             stdout=stdout,
         )
@@ -265,10 +275,10 @@ class JiraResolveCsdTests(unittest.TestCase):
                     "customfield_14600": [{"id": "13500"}],
                     "customfield_12404": "1",
                     "customfield_12107": {"id": "11227"},
-                    "customfield_13701": "Resolved during close-csd skill verification and test issue cleanup.",
+                    "customfield_13701": "Move setupRemoteVideoEx earlier.",
                     "customfield_13704": ["N/A"],
                     "customfield_13703": "Smoke check the Jira workflow only.",
-                    "customfield_11708": "Issue was created for skill validation and is being resolved after the workflow check.",
+                    "customfield_11708": "Remote video decoded early but setupRemoteVideoEx was delayed.",
                     "customfield_12100": {
                         "id": "11202",
                         "child": {"id": "11271"},
@@ -277,6 +287,17 @@ class JiraResolveCsdTests(unittest.TestCase):
                 },
             },
         )
+
+    def test_main_resolve_requires_root_cause_and_solution(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "--resolve requires both --root-cause and --solution",
+        ):
+            self.module.main(
+                argv=["CSD-10001", "--resolve"],
+                request_func=FakeJiraAPI(),
+                stdout=io.StringIO(),
+            )
 
 
 if __name__ == "__main__":

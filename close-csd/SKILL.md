@@ -43,7 +43,9 @@ That command is dry-run only and prints the planned actions for each issue. To a
 python3 scripts/jira_resolve_csd.py \
   https://jira.agoralab.co/browse/CSD-77806 \
   https://jira.agoralab.co/browse/CSD-77807 \
+  --root-cause 'Remote video decoding finished early, but setupRemoteVideoEx was invoked several seconds later.' \
+  --solution 'Move setupRemoteVideoEx earlier and bind the remote view before or immediately after onUserJoined.' \
   --resolve
 ```
 
-Version 1 resolves issues to `RESOLVED` with resolution `Done`, not `Closed`. It accepts either Jira browse URLs or bare `CSD-xxxxx` keys and returns the full Jira browse link for each issue.
+Version 1 resolves issues to `RESOLVED` with resolution `Done`, not `Closed`. It accepts either Jira browse URLs or bare `CSD-xxxxx` keys and returns the full Jira browse link for each issue. Real resolution requires explicit `--root-cause` and `--solution` inputs; the script no longer uses placeholder RCA text.

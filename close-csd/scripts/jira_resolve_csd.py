@@ -33,10 +33,6 @@ RESOLVE_ISSUE_DEFAULT_FIX_VERSION_ID = "22241"
 RESOLVE_ISSUE_FINAL_RESOLVED_COMPONENT_ID = "11227"
 RESOLVE_ISSUE_ROOT_CAUSE_ABSTRACT_PARENT_ID = "11202"
 RESOLVE_ISSUE_ROOT_CAUSE_ABSTRACT_CHILD_ID = "11271"
-RESOLVE_ISSUE_SOLUTION = "Resolved during close-csd skill verification and test issue cleanup."
-RESOLVE_ISSUE_ROOT_CAUSE = (
-    "Issue was created for skill validation and is being resolved after the workflow check."
-)
 RESOLVE_ISSUE_SUGGESTED_TEST_SCOPE = "Smoke check the Jira workflow only."
 RESOLVE_ISSUE_MERGED_BRANCH = "N/A"
 SUPPORTED_ACTIVE_STATUSES = {"new", "inprogress"}
@@ -98,7 +94,13 @@ def build_fix_versions(issue_payload: dict) -> list[dict]:
     return [{"id": version_id} for version_id in version_ids]
 
 
-def build_resolve_issue_payload(transition_id: str, fix_versions: list[dict]) -> dict:
+def build_resolve_issue_payload(
+    transition_id: str,
+    fix_versions: list[dict],
+    *,
+    root_cause: str,
+    solution: str,
+) -> dict:
     return {
         "transition": {"id": transition_id},
         "fields": {
@@ -109,10 +111,10 @@ def build_resolve_issue_payload(transition_id: str, fix_versions: list[dict]) ->
             "customfield_14600": [{"id": RESOLVE_ISSUE_ACTION_LIST_ID}],
             "customfield_12404": RESOLVE_ISSUE_ACTUAL_WORKLOAD,
             "customfield_12107": {"id": RESOLVE_ISSUE_FINAL_RESOLVED_COMPONENT_ID},
-            "customfield_13701": RESOLVE_ISSUE_SOLUTION,
+            "customfield_13701": solution,
             "customfield_13704": [RESOLVE_ISSUE_MERGED_BRANCH],
             "customfield_13703": RESOLVE_ISSUE_SUGGESTED_TEST_SCOPE,
-            "customfield_11708": RESOLVE_ISSUE_ROOT_CAUSE,
+            "customfield_11708": root_cause,
             "customfield_12100": {
                 "id": RESOLVE_ISSUE_ROOT_CAUSE_ABSTRACT_PARENT_ID,
                 "child": {"id": RESOLVE_ISSUE_ROOT_CAUSE_ABSTRACT_CHILD_ID},
@@ -216,6 +218,8 @@ def process_issue(
     issue_or_url: str,
     *,
     resolve: bool,
+    root_cause: str | None,
+    solution: str | None,
     request_func: Callable[..., dict],
     env_path: Path,
 ) -> dict:
@@ -300,7 +304,12 @@ def process_issue(
         transition_issue(
             request_func,
             issue_key,
-            build_resolve_issue_payload(resolve_transition["id"], fix_versions),
+            build_resolve_issue_payload(
+                resolve_transition["id"],
+                fix_versions,
+                root_cause=root_cause or "",
+                solution=solution or "",
+            ),
             env_path,
         )
         current_status = resolve_transition["to"]["name"]
@@ -349,12 +358,26 @@ def main(
         action="store_true",
         help="Actually resolve the issues. Without this flag the command is dry-run only.",
     )
+    parser.add_argument(
+        "--root-cause",
+        dest="root_cause",
+        help="Confirmed root cause text used for Jira resolution fields.",
+    )
+    parser.add_argument(
+        "--solution",
+        help="Confirmed solution text used for Jira resolution fields.",
+    )
     args = parser.parse_args(argv)
+
+    if args.resolve and (not args.root_cause or not args.solution):
+        raise ValueError("--resolve requires both --root-cause and --solution.")
 
     results = [
         process_issue(
             issue_or_url,
             resolve=args.resolve,
+            root_cause=args.root_cause,
+            solution=args.solution,
             request_func=request_func,
             env_path=env_path,
         )

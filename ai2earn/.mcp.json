@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "aitoearn": {
+      "type": "http",
+      "url": "https://aitoearn.cn/api/unified/mcp",
+      "headers": {
+        "x-api-key": "${AITO_EARN_API_KEY}"
+      }
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
+  }
+}

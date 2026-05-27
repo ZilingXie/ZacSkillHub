@@ -40,15 +40,27 @@ Jira REST calls must use the shared Python request layer that preserves the exac
 Use the template-based create flow to verify POST without hand-crafting a request body:
 
 ```bash
-python3 scripts/jira_create_bug.py --summary 'create path smoke test'
+python3 scripts/jira_create_bug.py \
+  --summary 'Slow first remote video rendering caused by late setupRemoteVideoEx' \
+  --customer 'Knowmerece' \
+  --cid '1436734' \
+  --vid '1649426'
 ```
 
-That command is dry-run only and prints the final payload. To create a real test issue:
+That command is dry-run only and prints the final payload. To create a real issue:
 
 ```bash
-python3 scripts/jira_create_bug.py --summary 'create path smoke test' --create
+python3 scripts/jira_create_bug.py \
+  --summary 'Slow first remote video rendering caused by late setupRemoteVideoEx' \
+  --customer 'Knowmerece' \
+  --cid '1436734' \
+  --vid '1649426' \
+  --create
 ```
 
-Version 1 only supports template-based CSD `Bug` creation. It is meant to validate the create path, not to expose every CSD field as user input.
+Version 1 only supports template-based CSD `Bug` creation.
 The default template currently uses `Business Line = US/ROW`.
+When `--customer` is provided, the summary is normalized to `[Customer] issue`.
+Customer `VID` is mandatory for both dry-run preview and real issue creation. Do not use synthetic or test `VID`s in this workflow.
+If `--description` is omitted, the script builds a customer-oriented description from the customer, CID, VID, and problem summary.
 After a successful create, the script automatically assigns the new issue to `xieziling@agora.io`, runs `Start Progress`, and returns the full Jira browse link.
