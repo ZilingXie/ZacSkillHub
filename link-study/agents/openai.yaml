@@ -1,0 +1,4 @@
+interface:
+  display_name: "Link Study"
+  short_description: "Read, compare, and learn from web and Xiaohongshu links"
+  default_prompt: "Use $link-study to study this link with evidence, connect it to my current work, and enter learning mode only if I ask."
