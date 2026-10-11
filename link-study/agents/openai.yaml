@@ -1,4 +1,4 @@
 interface:
   display_name: "Link Study"
-  short_description: "Read, compare, and learn from web and Xiaohongshu links"
-  default_prompt: "Use $link-study to study this link with evidence, connect it to my current work, and enter learning mode only if I ask."
+  short_description: "Evaluate GitHub projects and learn from web links"
+  default_prompt: "Use $link-study to decide whether this link is useful, connect it to my current workflows, and save a searchable study record when appropriate."
