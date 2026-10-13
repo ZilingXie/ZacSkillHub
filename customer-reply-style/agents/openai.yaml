@@ -1,7 +1,7 @@
 interface:
   display_name: "Customer Reply Style"
-  short_description: "按你的偏好起草、压缩和润色客户或内部同事的技术回复"
-  default_prompt: "Use $customer-reply-style，按客户或内部同事受众模式起草或润色技术回复，并遵循宿主应用的语言规则。"
+  short_description: "按你的偏好起草、压缩和润色客户或内部同事的中文技术回复"
+  default_prompt: "Use $customer-reply-style，按客户或内部同事受众模式起草或润色中文技术回复。"
 
 policy:
   allow_implicit_invocation: true
