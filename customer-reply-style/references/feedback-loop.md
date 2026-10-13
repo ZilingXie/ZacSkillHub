@@ -13,7 +13,7 @@ Compare the drafts along these dimensions:
 5. Action: whether the final version gave a concrete test or next step.
 6. Product boundary: whether the user corrected a recommendation, API capability, network option, or support limitation.
 7. Tone: greeting, directness, amount of apology, formality, and whether the reply sounds like a support engineer rather than an internal report.
-8. Language: whether the customer reply was in Chinese by default, and whether a different language was used only after the user explicitly requested it while product/API names and links remained accurate.
+8. Language: whether the reply followed the host application's target-language and delivery contract, including any customer-language reference or post-approval translation, while product/API names and links remained accurate.
 9. Source discipline: whether a documentation link was requested, whether the cited page actually supports the statement, and whether an inference was incorrectly presented as a documented requirement.
 10. Integration: whether the user wanted a complete regenerated reply after revisions instead of an incremental patch.
 11. Delivery form: whether a local customer-reply edit still needed the complete sendable reply, or whether the user explicitly requested only a fragment.
@@ -59,7 +59,7 @@ Do not write to the skill merely because a manual edit was observed. If the user
 The following are explicit default preferences for future drafting:
 
 - For a customer reply, a request to change one sentence, bullet, or section still requires returning the complete revised reply. Output only a fragment when the user explicitly asks for one.
-- Customer replies are in Chinese by default. Use another language only when the user explicitly asks for it; preserve product names, API names, code literals, and official links accurately within the Chinese reply.
+- Customer replies follow the host application's target-language and delivery contract. Do not add a Chinese or English default at the Skill layer; preserve product names, API names, code literals, and official links accurately while translating or rendering the surrounding explanation.
 - Ground customer-facing product explanations in checked official documentation whenever practical, and include the relevant official documentation link next to the supported statement. If the source cannot be checked or does not support the claim, preserve the uncertainty instead of inventing a link or overstating the documentation.
 - For multi-case investigation replies, organize each case as evidence, bounded conclusion, and focused recommendation, followed by one concise overall conclusion.
 - Keep the distinction between successful initial media setup and a later interruption, freeze, reconnect, or leave. Do not collapse a later symptom into "never received video" or another persistent-failure claim.
