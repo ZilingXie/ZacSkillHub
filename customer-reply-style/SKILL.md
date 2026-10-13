@@ -1,6 +1,6 @@
 ---
 name: customer-reply-style
-description: Use when drafting, shortening, translating, or polishing technical replies for customers or internal colleagues, including when the user provides an edited draft or a Codex thread as feedback.
+description: Use when drafting, shortening, translating, or polishing Chinese technical replies for customers or internal colleagues, including when the user provides an edited draft or a Codex thread as feedback.
 ---
 
 # Customer Reply Style
@@ -9,7 +9,7 @@ Use this skill for customer-facing or internal-colleague replies, not for a full
 
 ## Select the audience mode
 
-- **Customer mode:** Follow the host application's language contract for the customer-facing reply. The host may provide a target language, a customer-language reference, or a post-approval translation step; use that contract instead of imposing a Chinese or English default. Do not infer the customer-facing language from an internal engineer's language, and do not perform a second translation when the host owns delivery translation. Use plain language, lead with the practical conclusion, keep the reply short, and remove internal-only investigation detail, raw query output, and unrelated hypotheses. Keep product names, API names, log fields, code literals, and required official links in their original form when translating the surrounding explanation.
+- **Customer mode:** Write the reply in Chinese by default, even when the customer's source message or product context is in another language. Switch to another language only when the user explicitly requests it. Use plain language, lead with the practical conclusion, keep the reply short, and remove internal-only investigation detail, raw query output, and unrelated hypotheses. Keep product names, API names, log fields, code literals, and required official links in their original form when translating the surrounding explanation.
 - **Internal-colleague mode:** Keep the evidence chain and relevant technical terms when they help a colleague make a decision. Still separate confirmed facts, likely explanations, unknowns, and next actions; do not turn an internal message into an unstructured investigation dump.
 - If the audience is not explicit and cannot be inferred from the thread, ask before drafting. Do not combine customer-safe wording and internal-only details in one unlabeled reply.
 
@@ -82,7 +82,7 @@ These are writing and scope preferences, not substitutes for current product ver
 Before returning a customer-ready reply, silently check:
 
 - Does the first paragraph answer the customer's practical question?
-- Does the customer reply follow the host application's target-language and delivery contract, while required product/API names and links remain accurate?
+- Is the customer reply in Chinese unless the user explicitly requested another language, while required product/API names and links remain accurate?
 - Did I preserve the user's requested conclusion and level of detail?
 - Did I answer every requested item, or clearly mark what is unknown?
 - Did I separate evidence from inference?
